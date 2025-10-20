@@ -3,7 +3,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
+from django.db.models import Q, Max
 
+from catalog.models import Topic
 from .models import Citizen, VisitCase, Visit
 from .serializers import (
     CitizenSerializer, VisitCaseSerializer, VisitSerializer, VisitCreateSerializer
@@ -163,3 +165,111 @@ class PhotoUploadAPIView(APIView):
         return Response({"path": rel_path, "url": url}, status=201)
     
 
+
+class SearchAPIView(APIView):
+    """
+    GET /api/visits/search/?dpi=&phone=&name=&case_code=&topic=
+    - topic: acepta id numérico, o código/nombre (icontains)
+    Retorna: citizen, citizen_candidates, topic, topic_candidates, case, cases, last_visit
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_topic_from_param(self, topic_param: str | None):
+        if not topic_param:
+            return None, []
+        topic = None
+        candidates = []
+        # Si es número, intenta por id
+        if topic_param.isdigit():
+            topic = Topic.objects.filter(id=int(topic_param), is_active=True).first()
+            if topic:
+                return topic, []
+        # Buscar por code o name (icontains)
+        qs = Topic.objects.filter(is_active=True).filter(
+            Q(code__iexact=topic_param) | Q(name__icontains=topic_param)
+        )[:10]
+        candidates = list(qs)
+        if len(candidates) == 1:
+            topic = candidates[0]
+            candidates = []
+        return topic, candidates
+
+    def get(self, request):
+        dpi = (request.query_params.get("dpi") or "").strip()
+        phone = (request.query_params.get("phone") or "").strip()
+        name = (request.query_params.get("name") or "").strip()
+        case_code = (request.query_params.get("case_code") or "").strip()
+        topic_param = (request.query_params.get("topic") or "").strip()
+
+        # --- Topic (claro o candidatos) ---
+        topic, topic_candidates = self.get_topic_from_param(topic_param)
+
+        # --- Citizen (claro o candidatos) ---
+        citizen = None
+        citizen_candidates = []
+
+        # Prioridad: dpi exacto > phone exacto > name icontains
+        if dpi:
+            citizen = Citizen.objects.filter(dpi__iexact=dpi).first()
+        if not citizen and phone:
+            # varios podrían tener el mismo phone; listamos candidatos
+            cands = Citizen.objects.filter(phone__iexact=phone)[:10]
+            if cands.count() == 1:
+                citizen = cands.first()
+            else:
+                citizen_candidates = list(cands)
+        if not citizen and name:
+            # buscar por nombre
+            cands = Citizen.objects.filter(name__icontains=name)[:10]
+            if cands.count() == 1:
+                citizen = cands.first()
+            else:
+                citizen_candidates = list(cands)
+
+        # Si viene case_code, úsalo para fijar case (y de ahí citizen/topic)
+        case = None
+        cases = []
+        last_visit = None
+
+        if case_code:
+            case = VisitCase.objects.select_related("citizen", "topic").filter(code_persistente__iexact=case_code).first()
+            if case:
+                citizen = citizen or case.citizen
+                topic = topic or case.topic
+
+        # Si ya tengo citizen (y quizá topic), arma el set de cases
+        if citizen:
+            qs_cases = VisitCase.objects.select_related("citizen", "topic").filter(citizen=citizen)
+            if topic:
+                qs_cases = qs_cases.filter(topic=topic)
+            cases = list(qs_cases.order_by("-opened_at")[:50])
+            # Si topic único → intenta definir case principal
+            if not case and topic:
+                case = qs_cases.order_by("-opened_at").first()
+            # last_visit: del case si hay; si no, de ese citizen
+            if case:
+                last_visit = Visit.objects.filter(case=case).order_by("-checkin_at").first()
+            else:
+                last_visit = Visit.objects.filter(case__citizen=citizen).order_by("-checkin_at").first()
+        else:
+            # Sin citizen claro pero con topic: no hay cases definidos; last_visit no aplica
+            pass
+
+        # Serialización
+        out = {
+            "query": {
+                "dpi": dpi,
+                "phone": phone,
+                "name": name,
+                "case_code": case_code,
+                "topic": topic_param,
+            },
+            "citizen": CitizenSerializer(citizen).data if citizen else None,
+            "citizen_candidates": CitizenSerializer(citizen_candidates, many=True).data if citizen_candidates else [],
+            "topic": {"id": topic.id, "code": topic.code, "name": topic.name} if topic else None,
+            "topic_candidates": [{"id": t.id, "code": t.code, "name": t.name} for t in topic_candidates] if topic_candidates else [],
+            "case": VisitCaseSerializer(case).data if case else None,
+            "cases": VisitCaseSerializer(cases, many=True).data if cases else [],
+            "last_visit": VisitSerializer(last_visit).data if last_visit else None,
+        }
+        return Response(out, status=200)

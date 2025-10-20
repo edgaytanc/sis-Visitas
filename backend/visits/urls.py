@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import VisitsPlaceholderAPIView, CitizenViewSet, VisitCaseViewSet, VisitViewSet, PhotoUploadAPIView
+from .views import VisitsPlaceholderAPIView, CitizenViewSet, VisitCaseViewSet, VisitViewSet, PhotoUploadAPIView, SearchAPIView
 
 router = DefaultRouter()
 router.register(r"citizens", CitizenViewSet, basename="citizen")
@@ -11,4 +11,5 @@ urlpatterns = [
     path("placeholder/", VisitsPlaceholderAPIView.as_view(), name="visits-placeholder"),
     path("", include(router.urls)),
     path("photos/upload/", PhotoUploadAPIView.as_view(), name="photo-upload"),
+    path("search/", SearchAPIView.as_view(), name="visits-search"),
 ]
