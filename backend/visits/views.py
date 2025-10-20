@@ -12,6 +12,7 @@ from .filters import VisitFilter, VisitCaseFilter
 from django.conf import settings
 from .serializers import PhotoUploadSerializer
 from .utils import _parse_base64, save_image_file, read_inmemory_uploadedfile
+from django.utils import timezone
 
 class VisitsPlaceholderAPIView(APIView):
     def get(self, request):
@@ -69,6 +70,43 @@ class VisitViewSet(viewsets.ModelViewSet):
         qs = self.get_queryset().order_by("-checkin_at")[:20]
         ser = VisitSerializer(qs, many=True)
         return Response(ser.data, status=200)
+    
+    # Helper interno: marca checkout, valida idempotencia
+    def _perform_checkout(self, visit):
+        if visit.checkout_at:
+            return None, {"detail": "La visita ya tiene checkout registrado."}
+        visit.checkout_at = timezone.now()
+        visit.save(update_fields=["checkout_at", "updated_at"])
+        return visit, None
+
+    @action(detail=True, methods=["patch"], url_path="checkout")
+    def checkout_by_id(self, request, pk=None):
+        """
+        PATCH /api/visits/visits/{id}/checkout/
+        """
+        visit = self.get_object()
+        updated, error = self._perform_checkout(visit)
+        if error:
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+        return Response(VisitSerializer(updated).data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["patch"], url_path="checkout")
+    def checkout_by_badge(self, request):
+        """
+        PATCH /api/visits/visits/checkout/?badge_code=...  (o JSON { "badge_code": "..." })
+        """
+        badge_code = request.query_params.get("badge_code") or request.data.get("badge_code")
+        if not badge_code:
+            return Response({"detail": "Debe proporcionar 'badge_code'."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            visit = Visit.objects.get(badge_code=badge_code)
+        except Visit.DoesNotExist:
+            return Response({"detail": "No existe una visita con ese badge_code."}, status=status.HTTP_404_NOT_FOUND)
+
+        updated, error = self._perform_checkout(visit)
+        if error:
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+        return Response(VisitSerializer(updated).data, status=status.HTTP_200_OK)
     
 class PhotoUploadAPIView(APIView):
     """
