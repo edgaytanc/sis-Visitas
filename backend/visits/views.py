@@ -14,6 +14,9 @@ from .serializers import PhotoUploadSerializer
 from .utils import _parse_base64, save_image_file, read_inmemory_uploadedfile
 from django.utils import timezone
 
+from django.http import HttpResponse
+from .pdf import render_badge_pdf
+
 class VisitsPlaceholderAPIView(APIView):
     def get(self, request):
         return Response({"ok": True, "app": "visits"})
@@ -108,6 +111,25 @@ class VisitViewSet(viewsets.ModelViewSet):
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
         return Response(VisitSerializer(updated).data, status=status.HTTP_200_OK)
     
+    @action(detail=True, methods=["get"], url_path=r"badge\.pdf")
+    def badge_pdf(self, request, pk=None):
+        """
+        GET /api/visits/visits/{id}/badge.pdf
+        Devuelve el PDF del gafete (inline por defecto).
+        Puedes pasar ?download=1 para forzar descarga.
+        """
+        visit = self.get_object()
+        pdf_bytes = render_badge_pdf(visit)
+
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        filename = f"gafete-{visit.badge_code or visit.id}.pdf"
+        if request.query_params.get("download") in ("1", "true", "yes"):
+            response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        else:
+            response["Content-Disposition"] = f'inline; filename="{filename}"'
+        return response
+
+    
 class PhotoUploadAPIView(APIView):
     """
     POST /api/visits/photos/upload/
@@ -139,3 +161,5 @@ class PhotoUploadAPIView(APIView):
 
         url = request.build_absolute_uri(f"{settings.MEDIA_URL}{rel_path}")
         return Response({"path": rel_path, "url": url}, status=201)
+    
+
