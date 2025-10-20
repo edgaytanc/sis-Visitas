@@ -138,3 +138,21 @@ class VisitCreateSerializer(serializers.Serializer):
 
     def to_representation(self, instance: Visit):
         return VisitSerializer(instance).data
+
+
+
+class PhotoUploadSerializer(serializers.Serializer):
+    """
+    Permite subir imagen vía:
+    - multipart: campo 'image' (InMemoryUploadedFile)
+    - o JSON base64: campo 'image_base64' (data:image/<fmt>;base64,<...> o solo el base64)
+    Opcional: 'filename' sugerido.
+    """
+    image = serializers.ImageField(required=False, allow_null=True)
+    image_base64 = serializers.CharField(required=False, allow_blank=True)
+    filename = serializers.CharField(required=False, allow_blank=True, default="")
+
+    def validate(self, attrs):
+        if not attrs.get("image") and not attrs.get("image_base64"):
+            raise serializers.ValidationError("Debes enviar 'image' (multipart) o 'image_base64' (JSON).")
+        return attrs

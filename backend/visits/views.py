@@ -9,6 +9,9 @@ from .serializers import (
     CitizenSerializer, VisitCaseSerializer, VisitSerializer, VisitCreateSerializer
 )
 from .filters import VisitFilter, VisitCaseFilter
+from django.conf import settings
+from .serializers import PhotoUploadSerializer
+from .utils import _parse_base64, save_image_file, read_inmemory_uploadedfile
 
 class VisitsPlaceholderAPIView(APIView):
     def get(self, request):
@@ -66,3 +69,35 @@ class VisitViewSet(viewsets.ModelViewSet):
         qs = self.get_queryset().order_by("-checkin_at")[:20]
         ser = VisitSerializer(qs, many=True)
         return Response(ser.data, status=200)
+    
+class PhotoUploadAPIView(APIView):
+    """
+    POST /api/visits/photos/upload/
+    - multipart: image=<file>
+    - JSON: { "image_base64": "data:image/jpeg;base64,..." }
+    Respuesta: { "path": "<rel_path>", "url": "<abs_url>" }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        ser = PhotoUploadSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        image_file = ser.validated_data.get("image", None)
+        image_b64 = ser.validated_data.get("image_base64", "")
+        filename = ser.validated_data.get("filename", "")
+
+        try:
+            if image_file:
+                raw = read_inmemory_uploadedfile(image_file)
+                rel_path = save_image_file(raw, original_name=image_file.name)
+            else:
+                raw, ext_hint = _parse_base64(image_b64)
+                suggest_name = filename or f"upload{ext_hint}"
+                rel_path = save_image_file(raw, original_name=suggest_name)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=400)
+        except Exception:
+            return Response({"detail": "No se pudo procesar la imagen."}, status=400)
+
+        url = request.build_absolute_uri(f"{settings.MEDIA_URL}{rel_path}")
+        return Response({"path": rel_path, "url": url}, status=201)
