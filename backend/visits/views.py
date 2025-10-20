@@ -19,6 +19,8 @@ from django.utils import timezone
 from django.http import HttpResponse
 from .pdf import render_badge_pdf
 
+from auditlog.utils import log_action, get_client_ip
+
 class VisitsPlaceholderAPIView(APIView):
     def get(self, request):
         return Response({"ok": True, "app": "visits"})
@@ -77,11 +79,26 @@ class VisitViewSet(viewsets.ModelViewSet):
         return Response(ser.data, status=200)
     
     # Helper interno: marca checkout, valida idempotencia
-    def _perform_checkout(self, visit):
+    def _perform_checkout(self, visit, request=None):
         if visit.checkout_at:
             return None, {"detail": "La visita ya tiene checkout registrado."}
+        from django.utils import timezone
         visit.checkout_at = timezone.now()
         visit.save(update_fields=["checkout_at", "updated_at"])
+
+        # Auditoría con usuario + IP
+        try:
+            log_action(
+                user=getattr(request, "user", None),
+                action="visit_checkout",
+                entity="Visit",
+                entity_id=str(visit.id),
+                payload={"badge_code": visit.badge_code, "case_id": visit.case_id},
+                ip=get_client_ip(request) if request else None,
+            )
+        except Exception:
+            pass
+
         return visit, None
 
     @action(detail=True, methods=["patch"], url_path="checkout")
@@ -130,6 +147,8 @@ class VisitViewSet(viewsets.ModelViewSet):
         else:
             response["Content-Disposition"] = f'inline; filename="{filename}"'
         return response
+    
+    
 
     
 class PhotoUploadAPIView(APIView):

@@ -6,6 +6,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf import settings
 from django.conf.urls.static import static
 
+from users.views import LoginView
+
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/health/", healthcheck, name="healthcheck"),
@@ -23,7 +26,7 @@ urlpatterns = [
     path("api/reports/", include("reports.urls")),
 
     # Auth (JWT)
-    path("api/auth/jwt/create/", TokenObtainPairView.as_view(), name="jwt-create"),
+    path("api/auth/jwt/create/", LoginView.as_view(), name="jwt-create"),
     path("api/auth/jwt/refresh/", TokenRefreshView.as_view(), name="jwt-refresh"),
     path("api/auth/jwt/verify/", TokenVerifyView.as_view(), name="jwt-verify"),
     # logout en users.urls -> /api/users/logout/
