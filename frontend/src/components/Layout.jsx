@@ -20,6 +20,9 @@ import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount'
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd'
 import { Outlet, useNavigate } from 'react-router-dom'
 
+import LabelIcon from '@mui/icons-material/Label'
+// import { useAuthStore } from '../store/auth' // si necesitas roles dinámicos
+
 export default function Layout() {
   const navigate = useNavigate()
   const [open, setOpen] = React.useState(false)
@@ -76,6 +79,12 @@ export default function Layout() {
             <ListItemIcon><AdminPanelSettingsIcon /></ListItemIcon>
             <ListItemText primary="Administración" />
           </ListItemButton>
+
+          <ListItemButton onClick={() => go('/catalogos/temas')}>
+            <ListItemIcon><LabelIcon /></ListItemIcon>
+            <ListItemText primary="Temas" />
+          </ListItemButton>
+
         </List>
       </Drawer>
 

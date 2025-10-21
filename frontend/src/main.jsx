@@ -5,11 +5,12 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
 import theme from './theme'
 import App from './App'
-import Login from './pages/login'
+import Login from './pages/Login'
 import Logout from './pages/Logout'
 import Dashboard from './pages/Dashboard'
 import ProtectedRoute from './hooks/ProtectedRoute'
 import RequireRole from './hooks/RequireRole'
+import Temas from './pages/Temas'
 
 // Páginas “dummy” por rol:
 const Recepcion = () => <div>Panel Recepción (solo rol: recepcion)</div>
@@ -58,7 +59,14 @@ const router = createBrowserRouter([
             <Admin />
           </RequireRole>
         )
-      }
+      },
+      { path: '/catalogos/temas',
+        element: (
+          <RequireRole roles={['supervisor', 'admin']}>
+            <Temas />
+          </RequireRole>
+        ) 
+      },
     ]
   }
 ])
