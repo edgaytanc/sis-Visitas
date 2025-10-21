@@ -4,9 +4,7 @@ import Layout from './components/Layout'
 
 export default function App() {
   const location = useLocation()
-  const isAuthRoute = location.pathname.startsWith('/dashboard')
-
-  // Si estamos en /dashboard*, usamos el layout con AppBar/Drawer.
-  // Si estamos en /login, renderizamos sin layout.
-  return isAuthRoute ? <Layout /> : <Outlet />
+  // Rutas con layout (todas menos /login y /logout)
+  const noLayout = location.pathname.startsWith('/login') || location.pathname.startsWith('/logout')
+  return noLayout ? <Outlet /> : <Layout />
 }

@@ -15,14 +15,13 @@ import {
 import MenuIcon from '@mui/icons-material/Menu'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import LogoutIcon from '@mui/icons-material/Logout'
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
+import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount'
+import AssignmentIndIcon from '@mui/icons-material/AssignmentInd'
 import { Outlet, useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../store/auth'
-
-const drawerWidth = 260
 
 export default function Layout() {
   const navigate = useNavigate()
-  const logout = useAuthStore((s) => s.logout)
   const [open, setOpen] = React.useState(false)
 
   const toggleDrawer = () => setOpen((p) => !p)
@@ -42,7 +41,7 @@ export default function Layout() {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             SisVisitas
           </Typography>
-          <IconButton onClick={() => { logout(); navigate('/login') }} title="Salir">
+          <IconButton onClick={() => go('/logout')} title="Salir">
             <LogoutIcon />
           </IconButton>
         </Toolbar>
@@ -53,13 +52,29 @@ export default function Layout() {
         onClose={toggleDrawer}
         variant="temporary"
         ModalProps={{ keepMounted: true }}
-        sx={{ '& .MuiDrawer-paper': { width: drawerWidth } }}
+        sx={{ '& .MuiDrawer-paper': { width: 260 } }}
       >
         <Toolbar />
         <List>
           <ListItemButton onClick={() => go('/dashboard')}>
             <ListItemIcon><DashboardIcon /></ListItemIcon>
             <ListItemText primary="Dashboard" />
+          </ListItemButton>
+
+          {/* Ejemplos de secciones por rol */}
+          <ListItemButton onClick={() => go('/recepcion')}>
+            <ListItemIcon><AssignmentIndIcon /></ListItemIcon>
+            <ListItemText primary="Recepción" />
+          </ListItemButton>
+
+          <ListItemButton onClick={() => go('/supervision')}>
+            <ListItemIcon><SupervisorAccountIcon /></ListItemIcon>
+            <ListItemText primary="Supervisión" />
+          </ListItemButton>
+
+          <ListItemButton onClick={() => go('/admin')}>
+            <ListItemIcon><AdminPanelSettingsIcon /></ListItemIcon>
+            <ListItemText primary="Administración" />
           </ListItemButton>
         </List>
       </Drawer>

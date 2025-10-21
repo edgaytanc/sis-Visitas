@@ -1,29 +1,40 @@
 import React from 'react'
 import {
-  Box, Paper, Typography, TextField, Button, Stack, Link
+  Box, Paper, Typography, TextField, Button, Stack, Link, Alert
 } from '@mui/material'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAuthStore } from '../store/auth'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 const schema = z.object({
-  email: z.string().email('Correo inválido'),
+  username: z.string().min(3, 'Ingresa tu usuario'),
   password: z.string().min(4, 'Mínimo 4 caracteres')
 })
 
 export default function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
   const login = useAuthStore((s) => s.login)
+  const [errorMsg, setErrorMsg] = React.useState('')
 
   const {
     register, handleSubmit, formState: { errors, isSubmitting }
-  } = useForm({ resolver: zodResolver(schema), defaultValues: { email: '', password: '' } })
+  } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: { username: '', password: '' }
+  })
 
   const onSubmit = async (data) => {
-    await login({ email: data.email })
-    navigate('/dashboard')
+    setErrorMsg('')
+    try {
+      await login({ username: data.username, password: data.password })
+      const redirectTo = location.state?.from?.pathname || '/dashboard'
+      navigate(redirectTo, { replace: true })
+    } catch (err) {
+      setErrorMsg(err?.response?.data?.detail || 'No fue posible iniciar sesión.')
+    }
   }
 
   return (
@@ -43,15 +54,16 @@ export default function Login() {
             Inicia sesión para continuar
           </Typography>
 
+          {errorMsg && <Alert severity="error">{errorMsg}</Alert>}
+
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             <Stack spacing={2}>
               <TextField
-                label="Correo"
-                type="email"
-                autoComplete="email"
-                {...register('email')}
-                error={!!errors.email}
-                helperText={errors.email?.message}
+                label="Usuario"
+                autoComplete="username"
+                {...register('username')}
+                error={!!errors.username}
+                helperText={errors.username?.message}
                 fullWidth
               />
               <TextField
@@ -63,13 +75,7 @@ export default function Login() {
                 helperText={errors.password?.message}
                 fullWidth
               />
-
-              <Button
-                variant="contained"
-                type="submit"
-                disabled={isSubmitting}
-                size="large"
-              >
+              <Button variant="contained" type="submit" disabled={isSubmitting} size="large">
                 Entrar
               </Button>
             </Stack>
