@@ -11,6 +11,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from auditlog.utils import log_action, get_client_ip
 
+from drf_spectacular.utils import (
+    extend_schema, extend_schema_view, OpenApiParameter, OpenApiResponse,
+    OpenApiTypes
+)
+
 class UsersPlaceholderAPIView(APIView):
     def get(self, request):
         return Response({"ok": True, "app": "users"})

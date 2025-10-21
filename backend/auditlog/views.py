@@ -8,6 +8,11 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from .models import AuditLog
 from .serializers import AuditLogSerializer
 
+from drf_spectacular.utils import (
+    extend_schema, extend_schema_view, OpenApiParameter, OpenApiResponse,
+    OpenApiTypes
+)
+
 class AuditLogViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = AuditLog.objects.select_related("user").all()
     serializer_class = AuditLogSerializer

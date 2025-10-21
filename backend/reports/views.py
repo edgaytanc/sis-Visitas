@@ -12,6 +12,11 @@ from visits.serializers import VisitSerializer  # opcional si quieres exponer JS
 from .utils import make_datetime_range
 from .pdf import render_visits_report_pdf
 
+from drf_spectacular.utils import (
+    extend_schema, extend_schema_view, OpenApiParameter, OpenApiResponse,
+    OpenApiTypes
+)
+
 class ReportsPlaceholderAPIView(APIView):
     def get(self, request):
         return Response({"ok": True, "app": "reports"})

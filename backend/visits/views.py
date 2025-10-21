@@ -21,6 +21,11 @@ from .pdf import render_badge_pdf
 
 from auditlog.utils import log_action, get_client_ip
 
+from drf_spectacular.utils import (
+    extend_schema, extend_schema_view, OpenApiParameter, OpenApiResponse,
+    OpenApiTypes
+)
+
 class VisitsPlaceholderAPIView(APIView):
     def get(self, request):
         return Response({"ok": True, "app": "visits"})

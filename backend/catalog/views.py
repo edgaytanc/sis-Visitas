@@ -9,6 +9,11 @@ from .serializers import TopicSerializer
 from .permissions import TopicPermission
 from .filters import TopicFilter
 
+from drf_spectacular.utils import (
+    extend_schema, extend_schema_view, OpenApiParameter, OpenApiResponse,
+    OpenApiTypes
+)
+
 class CatalogPlaceholderAPIView(APIView):
     def get(self, request):
         return Response({"ok": True, "app": "catalog"})

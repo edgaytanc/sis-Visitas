@@ -2,6 +2,32 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import urlparse
+from datetime import timedelta
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "SisVisitas API",
+    "DESCRIPTION": "API del sistema de registro de visitas",
+    "VERSION": "0.1.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": r"/api",
+    "SERVERS": [
+        {"url": "http://localhost:8000", "description": "Desarrollo"},
+    ],
+    "CONTACT": {"name": "Equipo SisVisitas", "email": "soporte@sisvisitas.local"},
+    "LICENSE": {"name": "MIT"},
+    # Seguridad: JWT Bearer en toda la API
+    "SECURITY": [{"bearerAuth": []}],
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+}
 
 load_dotenv()
 
@@ -123,7 +149,6 @@ CORS_ALLOW_CREDENTIALS = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_TRUSTED_ORIGINS = [o.replace("http://", "https://") for o in CORS_ALLOWED_ORIGINS]
 
-from datetime import timedelta
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
@@ -135,3 +160,5 @@ SIMPLE_JWT = {
     "SIGNING_KEY": SECRET_KEY,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+
+
