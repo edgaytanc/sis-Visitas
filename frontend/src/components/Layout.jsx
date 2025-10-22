@@ -22,6 +22,7 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import HowToRegIcon from '@mui/icons-material/HowToReg'
 
 import LabelIcon from '@mui/icons-material/Label'
+import ManageSearchIcon from '@mui/icons-material/ManageSearch'
 // import { useAuthStore } from '../store/auth' // si necesitas roles dinámicos
 
 export default function Layout() {
@@ -94,6 +95,11 @@ export default function Layout() {
           <ListItemButton onClick={() => go('/visitas/check-out')}>
             <ListItemIcon><LogoutIcon /></ListItemIcon>
             <ListItemText primary="Control de salida" />
+          </ListItemButton>
+
+          <ListItemButton onClick={() => go('/busqueda')}>
+            <ListItemIcon><ManageSearchIcon /></ListItemIcon>
+            <ListItemText primary="Búsqueda rápida" />
           </ListItemButton>
 
         </List>

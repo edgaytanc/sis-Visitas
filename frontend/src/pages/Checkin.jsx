@@ -13,6 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { listActiveTemas } from '../api/temas'
 import { searchVisitContext, uploadPhotoBase64, createVisit } from '../api/visits'
 import RequireRole from '../hooks/RequireRole'
+import { useLocation } from 'react-router-dom'
 
 
 
@@ -115,6 +116,7 @@ function CheckinForm() {
     })
 
     const topicId = watch('topic_id')
+    const location = useLocation()
 
     React.useEffect(() => {
         (async () => {
@@ -134,7 +136,42 @@ function CheckinForm() {
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    React.useEffect(() => {
+        return () => {
+            if (videoStream) {
+                videoStream.getTracks().forEach(t => t.stop())
+            }
+        }
     }, [videoStream])
+
+    React.useEffect(() => {
+        const sp = new URLSearchParams(location.search)
+        const dpi = sp.get('dpi') || ''
+        const phone = sp.get('phone') || ''
+        const name = sp.get('name') || ''
+        const origin = sp.get('origin') || ''
+        const topicParam = sp.get('topic') || '' // puede ser id o code
+
+        if (dpi) setValue('dpi', dpi)
+        if (phone) setValue('phone', phone)
+        if (name) setValue('name', name)
+        if (origin) setValue('origin', origin)
+
+        if (topicParam) {
+            const maybeId = Number(topicParam)
+            if (!Number.isNaN(maybeId)) {
+                setValue('topic_id', maybeId)
+            } else {
+                // si topicParam es código (p.ej. TRAM-001) puedes:
+                // - dejarlo así (el usuario elige en el Autocomplete), o
+                // - hacer una búsqueda para convertir code->id si quieres automatizarlo.
+            }
+        }
+    }, [location.search, setValue])
+
+
 
     // ---- Cámara (MediaDevices)
 
