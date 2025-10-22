@@ -14,6 +14,7 @@ import Temas from './pages/Temas'
 import Checkin from './pages/Checkin'
 import Checkout from './pages/Checkout'
 import SearchQuick from './pages/SearchQuick'
+import ReportVisits from './pages/ReportVisits'
 
 // Páginas “dummy” por rol:
 const Recepcion = () => <div>Panel Recepción (solo rol: recepcion)</div>
@@ -92,6 +93,14 @@ const router = createBrowserRouter([
         path: '/busqueda', element: (
           <RequireRole roles={['recepcion', 'supervisor', 'admin']}>
             <SearchQuick />
+          </RequireRole>
+        )
+      },
+
+      {
+        path: '/reportes/visitas', element: (
+          <RequireRole roles={['supervisor', 'admin']}>
+            <ReportVisits />
           </RequireRole>
         )
       },
