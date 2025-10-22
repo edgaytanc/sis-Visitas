@@ -19,6 +19,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount'
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd'
 import { Outlet, useNavigate } from 'react-router-dom'
+import HowToRegIcon from '@mui/icons-material/HowToReg'
 
 import LabelIcon from '@mui/icons-material/Label'
 // import { useAuthStore } from '../store/auth' // si necesitas roles dinámicos
@@ -83,6 +84,11 @@ export default function Layout() {
           <ListItemButton onClick={() => go('/catalogos/temas')}>
             <ListItemIcon><LabelIcon /></ListItemIcon>
             <ListItemText primary="Temas" />
+          </ListItemButton>
+
+          <ListItemButton onClick={() => go('/visitas/check-in')}>
+            <ListItemIcon><HowToRegIcon /></ListItemIcon>
+            <ListItemText primary="Registro de Visita" />
           </ListItemButton>
 
         </List>

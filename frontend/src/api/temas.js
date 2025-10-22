@@ -61,3 +61,14 @@ export async function deleteTema(id) {
   await api.delete(`${TEMAS_PATH}${id}/`)
   return true
 }
+
+export async function listActiveTemas() {
+  // pide una página "grande" para simplificar el Autocomplete
+  const { data } = await api.get(`${TEMAS_PATH}active/`, { params: { page_size: 200 } })
+  const results = Array.isArray(data) ? data : (data?.results || [])
+  return results.map(t => ({
+    id: t.id,
+    code: t.code,
+    name: t.name,
+  }))
+}

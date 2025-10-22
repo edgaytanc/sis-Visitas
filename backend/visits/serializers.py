@@ -12,6 +12,12 @@ class CitizenSerializer(serializers.ModelSerializer):
         model = Citizen
         fields = ["id", "dpi", "passport", "name", "phone", "origin", "created_at", "updated_at"]
         read_only_fields = ["id", "created_at", "updated_at"]
+        # 👇 IMPORTANTE: no validar unicidad aquí, la BD ya la garantiza y
+        # VisitCreateSerializer.create() hace get_or_create(...)
+        extra_kwargs = {
+            "dpi": {"validators": []},
+            "passport": {"validators": []},
+        }
 
     def validate(self, attrs):
         dpi = attrs.get("dpi") if "dpi" in attrs else getattr(self.instance, "dpi", None)
