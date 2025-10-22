@@ -24,6 +24,7 @@ import HowToRegIcon from '@mui/icons-material/HowToReg'
 import LabelIcon from '@mui/icons-material/Label'
 import ManageSearchIcon from '@mui/icons-material/ManageSearch'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
+import ListAltIcon from '@mui/icons-material/ListAlt'
 // import { useAuthStore } from '../store/auth' // si necesitas roles dinámicos
 
 export default function Layout() {
@@ -106,6 +107,11 @@ export default function Layout() {
           <ListItemButton onClick={() => go('/reportes/visitas')}>
             <ListItemIcon><PictureAsPdfIcon /></ListItemIcon>
             <ListItemText primary="Reporte de visitas" />
+          </ListItemButton>
+
+          <ListItemButton onClick={() => go('/bitacora')}>
+            <ListItemIcon><ListAltIcon /></ListItemIcon>
+            <ListItemText primary="Bitácora" />
           </ListItemButton>
 
         </List>

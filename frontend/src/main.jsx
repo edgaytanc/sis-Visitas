@@ -15,6 +15,7 @@ import Checkin from './pages/Checkin'
 import Checkout from './pages/Checkout'
 import SearchQuick from './pages/SearchQuick'
 import ReportVisits from './pages/ReportVisits'
+import AuditLog from './pages/AuditLog'
 
 // Páginas “dummy” por rol:
 const Recepcion = () => <div>Panel Recepción (solo rol: recepcion)</div>
@@ -101,6 +102,14 @@ const router = createBrowserRouter([
         path: '/reportes/visitas', element: (
           <RequireRole roles={['supervisor', 'admin']}>
             <ReportVisits />
+          </RequireRole>
+        )
+      },
+
+      {
+        path: '/bitacora', element: (
+          <RequireRole roles={['supervisor', 'admin']}>
+            <AuditLog />
           </RequireRole>
         )
       },
