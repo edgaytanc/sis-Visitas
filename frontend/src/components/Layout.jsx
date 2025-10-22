@@ -91,6 +91,11 @@ export default function Layout() {
             <ListItemText primary="Registro de Visita" />
           </ListItemButton>
 
+          <ListItemButton onClick={() => go('/visitas/check-out')}>
+            <ListItemIcon><LogoutIcon /></ListItemIcon>
+            <ListItemText primary="Control de salida" />
+          </ListItemButton>
+
         </List>
       </Drawer>
 

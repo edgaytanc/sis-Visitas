@@ -12,6 +12,7 @@ import ProtectedRoute from './hooks/ProtectedRoute'
 import RequireRole from './hooks/RequireRole'
 import Temas from './pages/Temas'
 import Checkin from './pages/Checkin'
+import Checkout from './pages/Checkout'
 
 // Páginas “dummy” por rol:
 const Recepcion = () => <div>Panel Recepción (solo rol: recepcion)</div>
@@ -61,18 +62,30 @@ const router = createBrowserRouter([
           </RequireRole>
         )
       },
-      { path: '/catalogos/temas',
+      {
+        path: '/catalogos/temas',
         element: (
           <RequireRole roles={['supervisor', 'admin']}>
             <Temas />
           </RequireRole>
-        ) 
+        )
       },
 
-      { path: '/visitas/check-in', 
-        element: (<RequireRole roles={['recepcion','supervisor','admin']}>
+      {
+        path: '/visitas/check-in',
+        element: (<RequireRole roles={['recepcion', 'supervisor', 'admin']}>
           <Checkin />
-        </RequireRole>) },
+        </RequireRole>
+        )
+      },
+
+      {
+        path: '/visitas/check-out',
+        element: (<RequireRole roles={['recepcion', 'supervisor', 'admin']}>
+          <Checkout />
+        </RequireRole>
+        )
+      },
     ]
   }
 ])

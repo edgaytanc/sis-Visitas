@@ -9,21 +9,18 @@ export async function searchVisitContext({ dpi = '', phone = '', name = '', topi
   if (dpi) params.dpi = dpi
   if (phone) params.phone = phone
   if (name) params.name = name
-  if (topic) params.topic = topic   // id numérico, code o nombre (icontains)
+  if (topic) params.topic = topic
   if (case_code) params.case_code = case_code
-
   const { data } = await api.get(SEARCH_PATH, { params })
   return data
 }
 
 export async function uploadPhotoBase64(dataUrl, filename = 'captura.jpg') {
-  // Envía JSON: { image_base64, filename }
   const { data } = await api.post(PHOTO_UPLOAD_PATH, {
     image_base64: dataUrl,
     filename
   })
-  // Devuelve { path, url }
-  return data
+  return data // { path, url }
 }
 
 export async function createVisit({
@@ -49,6 +46,12 @@ export async function createVisit({
     reopen_justification
   }
   const { data } = await api.post(VISITS_PATH, payload)
-  // Respuesta es VisitSerializer: incluye id y badge_code
-  return data
+  return data // VisitSerializer
+}
+
+/** FE-06: checkout por badge_code (PATCH /visits/checkout/) */
+export async function checkoutByBadge(badge_code) {
+  const url = `${VISITS_PATH}checkout/`
+  const { data } = await api.patch(url, { badge_code })
+  return data // VisitSerializer actualizado (con checkout_at)
 }
