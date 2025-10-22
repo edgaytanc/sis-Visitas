@@ -14,7 +14,10 @@ import { listActiveTemas } from '../api/temas'
 import { searchVisitContext, uploadPhotoBase64, createVisit } from '../api/visits'
 import RequireRole from '../hooks/RequireRole'
 
+
+
 import api from '../api/axios'
+import PrintBadgeButton from '../components/PrintbadgeButton'
 
 const DPI_RE = /^[0-9]{6,13}$/
 const PHONE_RE = /^[0-9+\-() ]{6,20}$/
@@ -39,7 +42,7 @@ const schema = z.object({
     path: ['dpi'] // marca al lado de DPI
 })
 
-async function openBadgePdf(visitId, badgeCode = '') {
+async function openBadgePdf(visitId) {
     // Asegura la barra final /badge.pdf/
     const visitsPath = import.meta.env.VITE_VISITS_PATH || '/api/visits/visits/'
     const url = `${visitsPath}${visitId}/badge.pdf/`
@@ -54,7 +57,7 @@ async function openBadgePdf(visitId, badgeCode = '') {
     // (opcional) Si quieres forzar descarga:
     // const link = document.createElement('a')
     // link.href = pdfUrl
-    // link.download = `gafete-${badgeCode || visitId}.pdf`
+    // link.download = `gafete-${visitId}.pdf`
     // link.click()
     // URL.revokeObjectURL(pdfUrl) // si lo descargas y no necesitas mantenerlo
 }
@@ -81,6 +84,9 @@ function CheckinForm() {
     const [previewUrl, setPreviewUrl] = React.useState('')
     const [videoStream, setVideoStream] = React.useState(null)
     const [cameraReady, setCameraReady] = React.useState(false)
+
+    const [lastVisit, setLastVisit] = React.useState(null) // { id, badge_code }
+
 
     const [snack, setSnack] = React.useState({ open: false, text: '' })
 
@@ -180,7 +186,7 @@ function CheckinForm() {
                 setCameraReady(true)
             }
         } catch (e) {
-            setErrorMsg('No se pudo acceder a la cámara. Verifica permisos o usa https/localhost.')
+            setErrorMsg('No se pudo acceder a la cámara. Verifica permisos o usa https/localhost.', e.message)
         }
     }
 
@@ -231,7 +237,7 @@ function CheckinForm() {
                 const facing = track.getSettings()?.facingMode;
                 // si es trasera/environment, no espejar
                 if (facing && facing.toLowerCase() === 'environment') mirror = false;
-            } catch (_) { }
+            } catch (e) { e.message }
 
             // Pintar en canvas
             canvas.width = w;
@@ -250,7 +256,7 @@ function CheckinForm() {
             setValue('photo_data_url', dataUrl);
             // stopCamera(); // <- si quieres apagarla después
         } catch (e) {
-            setErrorMsg('No fue posible capturar la foto.');
+            setErrorMsg('No fue posible capturar la foto.', e.message);
         }
     };
 
@@ -318,6 +324,16 @@ function CheckinForm() {
         return msgs.join(' | ') || 'Solicitud inválida'
     }
 
+    async function openBadgePdf(visitId) {
+        const visitsPath = import.meta.env.VITE_VISITS_PATH || '/api/visits/visits/'
+        const url = `${visitsPath}${visitId}/badge.pdf/` // ¡barra final!
+        const res = await api.get(url, { responseType: 'blob' })
+        const blob = new Blob([res.data], { type: 'application/pdf' })
+        const pdfUrl = URL.createObjectURL(blob)
+        window.open(pdfUrl, '_blank', 'noopener,noreferrer')
+    }
+
+
     // ---- Guardar (create visit)
     const onSubmit = async (form) => {
         setErrorMsg(''); setInfoMsg('')
@@ -325,35 +341,48 @@ function CheckinForm() {
             // 1) Subir foto si existe dataURL
             let photo_path = ''
             if (form.photo_data_url) {
-                const photo = await uploadPhotoBase64(form.photo_data_url, `checkin-${(form.dpi || form.passport || 'sinid')}.jpg`)
+                const photo = await uploadPhotoBase64(
+                    form.photo_data_url,
+                    `checkin-${(form.dpi || form.passport || 'sinid')}.jpg`
+                )
                 photo_path = photo?.path || ''
             }
 
             // 2) Crear visita
             const visit = await createVisit({
-                citizen: { dpi: form.dpi, passport: form.passport, name: form.name, phone: form.phone, origin: form.origin },
-                topic_id: form.topic_id,
+                citizen: {
+                    dpi: form.dpi,
+                    passport: form.passport,
+                    name: form.name,
+                    phone: form.phone,
+                    origin: form.origin
+                },
+                topic_id: Number(form.topic_id),
                 target_unit: form.target_unit,
                 reason: form.reason || '',
                 photo_path,
                 reopen_justification: form.reopen_justification || ''
             })
 
+            // 3) Guardar referencia y feedback
             const badge = visit?.badge_code || 'SIN-COD'
-            const badgeUrl = `${apiBase}${visitsPath}${visit.id}/badge.pdf`
+            setLastVisit({ id: visit.id, badge_code: badge })
             setSnack({ open: true, text: `Visita creada. Gafete: ${badge}` })
             setInfoMsg(`Gafete generado: ${badge}. `)
 
-            // Limpia foto del formulario pero deja algunos campos
+            // (Opcional) abrir automáticamente el PDF
+            await openBadgePdf(visit.id)
+
+            // Limpiar solo la foto (si quieres dejar los demás campos)
             setPreviewUrl('')
             setValue('photo_data_url', '')
-            // (Opcional) abrir el PDF en nueva pestaña:
-            //   window.open(badgeUrl, '_blank', 'noopener,noreferrer')
-            openBadgePdf(visit.id, badge)
+
         } catch (e) {
+            console.error('Create visit error:', e?.response?.data)
             setErrorMsg(extractBackendErrors(e))
         }
     }
+
 
     const clearForm = () => {
         reset({
@@ -540,11 +569,21 @@ function CheckinForm() {
 
                     <Grid item xs={12}>
                         <Divider sx={{ my: 1 }} />
-                        <Stack direction="row" justifyContent="flex-end" spacing={2}>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="flex-end" spacing={2}>
                             <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={isSubmitting}>
                                 Guardar entrada
                             </Button>
+
+                            {lastVisit?.id && (
+                                <PrintBadgeButton
+                                    visitId={lastVisit.id}
+                                    badgeCode={lastVisit.badge_code}
+                                    variant="outlined"
+                                />
+                            )}
                         </Stack>
+
+
                     </Grid>
                 </Grid>
             </form>
