@@ -69,7 +69,7 @@ export default function Layout() {
           </ListItemButton>
 
           {/* Ejemplos de secciones por rol */}
-          <ListItemButton onClick={() => go('/recepcion')}>
+          {/* <ListItemButton onClick={() => go('/recepcion')}>
             <ListItemIcon><AssignmentIndIcon /></ListItemIcon>
             <ListItemText primary="Recepción" />
           </ListItemButton>
@@ -82,7 +82,7 @@ export default function Layout() {
           <ListItemButton onClick={() => go('/admin')}>
             <ListItemIcon><AdminPanelSettingsIcon /></ListItemIcon>
             <ListItemText primary="Administración" />
-          </ListItemButton>
+          </ListItemButton> */}
 
           <ListItemButton onClick={() => go('/catalogos/temas')}>
             <ListItemIcon><LabelIcon /></ListItemIcon>
