@@ -15,21 +15,74 @@ import {
 import MenuIcon from '@mui/icons-material/Menu'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import LogoutIcon from '@mui/icons-material/Logout'
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
-import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount'
-import AssignmentIndIcon from '@mui/icons-material/AssignmentInd'
-import { Outlet, useNavigate } from 'react-router-dom'
 import HowToRegIcon from '@mui/icons-material/HowToReg'
-
 import LabelIcon from '@mui/icons-material/Label'
 import ManageSearchIcon from '@mui/icons-material/ManageSearch'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import ListAltIcon from '@mui/icons-material/ListAlt'
-// import { useAuthStore } from '../store/auth' // si necesitas roles dinámicos
+import { Outlet, useNavigate } from 'react-router-dom'
 
-export default function Layout() {
+import { useAuthStore } from '../store/auth'
+
+// ----------------------- Menú con roles -----------------------
+const MENU_ITEMS = [
+  {
+    key: 'dashboard',
+    label: 'Dashboard',
+    icon: <DashboardIcon />,
+    path: '/dashboard',
+    roles: ['admin', 'supervisor', 'recepcion'] // todos
+  },
+  {
+    key: 'temas',
+    label: 'Temas',
+    icon: <LabelIcon />,
+    path: '/catalogos/temas',
+    roles: ['admin'] // solo admin
+  },
+  {
+    key: 'check-in',
+    label: 'Registro de Visita',
+    icon: <HowToRegIcon />,
+    path: '/visitas/check-in',
+    roles: ['admin', 'supervisor', 'recepcion']
+  },
+  {
+    key: 'check-out',
+    label: 'Control de salida',
+    icon: <LogoutIcon />,
+    path: '/visitas/check-out',
+    roles: ['admin', 'supervisor', 'recepcion']
+  },
+  {
+    key: 'busqueda',
+    label: 'Búsqueda rápida',
+    icon: <ManageSearchIcon />,
+    path: '/busqueda',
+    roles: ['admin', 'supervisor', 'recepcion']
+  },
+  {
+    key: 'reporte-visitas',
+    label: 'Reporte de visitas',
+    icon: <PictureAsPdfIcon />,
+    path: '/reportes/visitas',
+    roles: ['admin', 'supervisor']
+  },
+  {
+    key: 'bitacora',
+    label: 'Bitácora',
+    icon: <ListAltIcon />,
+    path: '/bitacora',
+    roles: ['admin', 'supervisor']
+  }
+]
+
+export default function Layout () {
   const navigate = useNavigate()
   const [open, setOpen] = React.useState(false)
+
+  // Solo leemos el usuario del store
+  const user = useAuthStore((state) => state.user)
 
   const toggleDrawer = () => setOpen((p) => !p)
 
@@ -38,17 +91,29 @@ export default function Layout() {
     setOpen(false)
   }
 
+  // 👇 Aquí usamos directamente user.roles para filtrar el menú
+  const userRoles = user?.roles || []
+
+  const visibleMenuItems = MENU_ITEMS.filter((item) => {
+    // Si el item no define roles, se muestra siempre
+    if (!item.roles || item.roles.length === 0) return true
+    // Si el usuario no tiene roles aún, no mostramos items restringidos
+    if (!userRoles.length) return false
+    // Mostrar si alguno de los roles requeridos está en los roles del usuario
+    return item.roles.some((r) => userRoles.includes(r))
+  })
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <AppBar color="inherit" position="fixed">
+      <AppBar color='inherit' position='fixed'>
         <Toolbar>
-          <IconButton edge="start" onClick={toggleDrawer} sx={{ mr: 2 }}>
+          <IconButton edge='start' onClick={toggleDrawer} sx={{ mr: 2 }}>
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+          <Typography variant='h6' sx={{ flexGrow: 1 }}>
             SisVisitas
           </Typography>
-          <IconButton onClick={() => go('/logout')} title="Salir">
+          <IconButton onClick={() => go('/logout')} title='Salir'>
             <LogoutIcon />
           </IconButton>
         </Toolbar>
@@ -57,68 +122,23 @@ export default function Layout() {
       <Drawer
         open={open}
         onClose={toggleDrawer}
-        variant="temporary"
+        variant='temporary'
         ModalProps={{ keepMounted: true }}
         sx={{ '& .MuiDrawer-paper': { width: 260 } }}
       >
         <Toolbar />
         <List>
-          <ListItemButton onClick={() => go('/dashboard')}>
-            <ListItemIcon><DashboardIcon /></ListItemIcon>
-            <ListItemText primary="Dashboard" />
-          </ListItemButton>
-
-          {/* Ejemplos de secciones por rol */}
-          {/* <ListItemButton onClick={() => go('/recepcion')}>
-            <ListItemIcon><AssignmentIndIcon /></ListItemIcon>
-            <ListItemText primary="Recepción" />
-          </ListItemButton>
-
-          <ListItemButton onClick={() => go('/supervision')}>
-            <ListItemIcon><SupervisorAccountIcon /></ListItemIcon>
-            <ListItemText primary="Supervisión" />
-          </ListItemButton>
-
-          <ListItemButton onClick={() => go('/admin')}>
-            <ListItemIcon><AdminPanelSettingsIcon /></ListItemIcon>
-            <ListItemText primary="Administración" />
-          </ListItemButton> */}
-
-          <ListItemButton onClick={() => go('/catalogos/temas')}>
-            <ListItemIcon><LabelIcon /></ListItemIcon>
-            <ListItemText primary="Temas" />
-          </ListItemButton>
-
-          <ListItemButton onClick={() => go('/visitas/check-in')}>
-            <ListItemIcon><HowToRegIcon /></ListItemIcon>
-            <ListItemText primary="Registro de Visita" />
-          </ListItemButton>
-
-          <ListItemButton onClick={() => go('/visitas/check-out')}>
-            <ListItemIcon><LogoutIcon /></ListItemIcon>
-            <ListItemText primary="Control de salida" />
-          </ListItemButton>
-
-          <ListItemButton onClick={() => go('/busqueda')}>
-            <ListItemIcon><ManageSearchIcon /></ListItemIcon>
-            <ListItemText primary="Búsqueda rápida" />
-          </ListItemButton>
-
-          <ListItemButton onClick={() => go('/reportes/visitas')}>
-            <ListItemIcon><PictureAsPdfIcon /></ListItemIcon>
-            <ListItemText primary="Reporte de visitas" />
-          </ListItemButton>
-
-          <ListItemButton onClick={() => go('/bitacora')}>
-            <ListItemIcon><ListAltIcon /></ListItemIcon>
-            <ListItemText primary="Bitácora" />
-          </ListItemButton>
-
+          {visibleMenuItems.map((item) => (
+            <ListItemButton key={item.key} onClick={() => go(item.path)}>
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.label} />
+            </ListItemButton>
+          ))}
         </List>
       </Drawer>
 
-      <Box component="main" sx={{ flexGrow: 1, pt: 10, pb: 4 }}>
-        <Container maxWidth="lg">
+      <Box component='main' sx={{ flexGrow: 1, pt: 10, pb: 4 }}>
+        <Container maxWidth='lg'>
           <Outlet />
         </Container>
       </Box>
