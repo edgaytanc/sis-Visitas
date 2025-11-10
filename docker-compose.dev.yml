@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    # El comando se divide para ejecutar migraciones primero
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      # Monta el código fuente para live-reload
+      - ./backend:/app/backend
+      # Monta el archivo de la BD para persistencia
+      - ./backend/db.sqlite3:/app/backend/db.sqlite3
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env # Usa tu .env existente
+    environment:
+      # Asegura que se usen las settings de desarrollo
+      - DJANGO_SETTINGS_MODULE=core.settings.dev
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.dev
+    volumes:
+      # Monta el código fuente para live-reload
+      - ./frontend:/app/frontend
+      # Truco para evitar que node_modules local sobreescriba el del contenedor
+      - /app/frontend/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      # Asegura que el frontend apunte al backend en el host
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  db_sqlite:

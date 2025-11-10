@@ -1,0 +1,21 @@
+# Usa la imagen oficial de Node.js 20 LTS
+FROM node:20-alpine
+
+# Establece el directorio de trabajo
+WORKDIR /app/frontend
+
+# Copia los archivos de dependencias
+COPY frontend/package.json frontend/package-lock.json ./
+
+# Instala las dependencias
+RUN npm install
+
+# Copia el código de la aplicación
+COPY ./frontend /app/frontend
+
+# Expone el puerto 5173
+EXPOSE 5173
+
+# Comando para iniciar el servidor de desarrollo de Vite
+# "--host" es crucial para exponerlo fuera del contenedor
+CMD ["npm", "run", "dev", "--", "--host"]

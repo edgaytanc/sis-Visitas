@@ -1,0 +1,24 @@
+# Usa la imagen oficial de Python 3.10
+FROM python:3.10-slim
+
+# Evita que Python escriba archivos .pyc
+ENV PYTHONDONTWRITEBYTECODE 1
+# Asegura que la salida de Python se muestre en la consola
+ENV PYTHONUNBUFFERED 1
+
+# Establece el directorio de trabajo
+WORKDIR /app/backend
+
+# Instala las dependencias
+COPY backend/requirements.txt .
+RUN pip install -r requirements.txt
+
+# Copia el código de la aplicación
+COPY ./backend /app/backend
+
+# Expone el puerto 8000
+EXPOSE 8000
+
+# Comando por defecto (runserver)
+# El compose-dev.yml lo sobreescribirá para ejecutar migraciones primero
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

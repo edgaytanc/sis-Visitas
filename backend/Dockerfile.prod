@@ -1,0 +1,27 @@
+# Usa la imagen oficial de Python 3.10
+FROM python:3.10-slim
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+WORKDIR /app/backend
+
+# Instala gunicorn (servidor WSGI de producción) y psycopg (para Postgres)
+COPY backend/requirements.txt .
+RUN pip install gunicorn psycopg[binary,pool] -r requirements.txt
+
+# Copia el script de espera y dale permisos
+COPY ./backend/wait-for-postgres.py /app/backend/wait-for-postgres.py
+RUN chmod +x /app/backend/wait-for-postgres.py
+
+# Copia el código de la aplicación
+COPY ./backend /app/backend
+
+# Ejecuta collectstatic para reunir los archivos del admin
+RUN python manage.py collectstatic --noinput
+
+# Expone el puerto 8000
+EXPOSE 8000
+
+# Comando para ejecutar la aplicación en producción
+CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]

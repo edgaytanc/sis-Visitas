@@ -58,7 +58,7 @@ const router = createBrowserRouter([
         )
       },
       {
-        path: '/admin',
+        path: '/panel-admin',
         element: (
           <RequireRole roles={['admin']}>
             <Admin />
