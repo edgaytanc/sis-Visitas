@@ -16,6 +16,7 @@ import Checkout from './pages/Checkout'
 import SearchQuick from './pages/SearchQuick'
 import ReportVisits from './pages/ReportVisits'
 import AuditLog from './pages/AuditLog'
+import AdminUsers from './pages/AdminUsers.jsx'
 
 // Páginas “dummy” por rol:
 const Recepcion = () => <div>Panel Recepción (solo rol: recepcion)</div>
@@ -110,6 +111,15 @@ const router = createBrowserRouter([
         path: '/bitacora', element: (
           <RequireRole roles={['supervisor', 'admin']}>
             <AuditLog />
+          </RequireRole>
+        )
+      },
+
+      {
+        path: '/admin/usuarios',
+        element: (
+          <RequireRole roles={['admin']}>
+            <AdminUsers />
           </RequireRole>
         )
       },

@@ -19,6 +19,7 @@ import HowToRegIcon from '@mui/icons-material/HowToReg'
 import LabelIcon from '@mui/icons-material/Label'
 import ManageSearchIcon from '@mui/icons-material/ManageSearch'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
 import ListAltIcon from '@mui/icons-material/ListAlt'
 import { Outlet, useNavigate } from 'react-router-dom'
 
@@ -39,6 +40,13 @@ const MENU_ITEMS = [
     icon: <LabelIcon />,
     path: '/catalogos/temas',
     roles: ['admin'] // solo admin
+  },
+  {
+    key: 'admin-users',
+    label: 'Usuarios',
+    icon: <ManageAccountsIcon />, // (Importar ManageAccountsIcon de @mui/icons-material)
+    path: '/admin/usuarios',
+    roles: ['admin'] // Clave para que solo lo vean admins
   },
   {
     key: 'check-in',
@@ -77,7 +85,7 @@ const MENU_ITEMS = [
   }
 ]
 
-export default function Layout () {
+export default function Layout() {
   const navigate = useNavigate()
   const [open, setOpen] = React.useState(false)
 
