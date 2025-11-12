@@ -58,6 +58,8 @@ services:
       - prod_django_static:/app/backend/staticfiles
       - certbot_certs:/etc/letsencrypt
       - certbot_www:/var/www/certbot
+      - ~/ssl-dhparams.pem:/etc/letsencrypt/ssl-dhparams.pem
+      - ~/options-ssl-nginx.conf:/etc/letsencrypt/options-ssl-nginx.conf
     depends_on:
       - backend
 
@@ -68,7 +70,13 @@ services:
       - certbot_www:/var/www/certbot
     depends_on:
       - frontend_nginx
-    command: certonly --webroot --webroot-path=/var/www/certbot --email edgaytanc@gmail.com -d sis-visitas.com -d www.sis-visitas.com --agree-tos --non-interactive
+    command: >
+      sh -c "
+        while true; do
+          sleep 12h & wait $${!};
+          certbot renew --quiet --post-hook 'docker-compose -f /home/info_pcychips/sis-visitas/docker-compose.yml restart frontend_nginx';
+        done
+      "
 
 volumes:
   prod_postgres_db:
