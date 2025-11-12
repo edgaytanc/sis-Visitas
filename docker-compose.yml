@@ -61,6 +61,15 @@ services:
     depends_on:
       - backend
 
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - certbot_certs:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    depends_on:
+      - frontend_nginx
+    command: certonly --webroot --webroot-path=/var/www/certbot --email edgaytanc@gmail.com -d sis-visitas.com -d www.sis-visitas.com --agree-tos --non-interactive
+
 volumes:
   prod_postgres_db:
   prod_django_media:
