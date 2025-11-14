@@ -17,6 +17,7 @@ import SearchQuick from './pages/SearchQuick'
 import ReportVisits from './pages/ReportVisits'
 import AuditLog from './pages/AuditLog'
 import AdminUsers from './pages/AdminUsers.jsx'
+import Activos from './pages/Activos'
 
 // Páginas “dummy” por rol:
 const Recepcion = () => <div>Panel Recepción (solo rol: recepcion)</div>
