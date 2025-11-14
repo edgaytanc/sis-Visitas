@@ -5,6 +5,6 @@ import Layout from './components/Layout'
 export default function App() {
   const location = useLocation()
   // Rutas con layout (todas menos /login y /logout)
-  const noLayout = location.pathname.startsWith('/login') || location.pathname.startsWith('/logout')
+  const noLayout = location.pathname === '/' || location.pathname.startsWith('/login') || location.pathname.startsWith('/logout')
   return noLayout ? <Outlet /> : <Layout />
 }
