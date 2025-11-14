@@ -123,6 +123,14 @@ const router = createBrowserRouter([
           </RequireRole>
         )
       },
+      {
+        path: '/visitas/activos',
+        element: (
+          <RequireRole roles={['recepcion', 'supervisor', 'admin']}>
+            <Activos />
+          </RequireRole>
+        )
+      },
     ]
   }
 ])
