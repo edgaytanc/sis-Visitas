@@ -55,3 +55,16 @@ export async function checkoutByBadge(badge_code) {
   const { data } = await api.patch(url, { badge_code })
   return data // VisitSerializer actualizado (con checkout_at)
 }
+
+// FE-NEW: listar visitas activas (sin checkout)
+export async function listActiveVisits() {
+  const url = `/api/visits/visits/active/`
+  const { data } = await api.get(url)
+  return data
+}
+
+// ✅ NUEVA FUNCIÓN: estadísticas del Dashboard
+export async function getDashboardStats() {
+  const { data } = await api.get(DASHBOARD_STATS_PATH)
+  return data // { activos, entradas_hoy, salidas_hoy, promedio_min }
+}

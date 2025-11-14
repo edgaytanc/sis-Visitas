@@ -21,6 +21,7 @@ import ManageSearchIcon from '@mui/icons-material/ManageSearch'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
 import ListAltIcon from '@mui/icons-material/ListAlt'
+import PeopleIcon from '@mui/icons-material/People'
 import { Outlet, useNavigate } from 'react-router-dom'
 
 import { useAuthStore } from '../store/auth'
@@ -53,6 +54,13 @@ const MENU_ITEMS = [
     label: 'Registro de Visita',
     icon: <HowToRegIcon />,
     path: '/visitas/check-in',
+    roles: ['admin', 'supervisor', 'recepcion']
+  },
+  {
+    key: 'visit-activos',
+    label: 'Visitantes activos',
+    icon: <PeopleIcon />,
+    path: '/visitas/activos',
     roles: ['admin', 'supervisor', 'recepcion']
   },
   {

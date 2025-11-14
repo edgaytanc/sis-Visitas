@@ -83,6 +83,17 @@ class VisitViewSet(viewsets.ModelViewSet):
         ser = VisitSerializer(qs, many=True)
         return Response(ser.data, status=200)
     
+    # ✅ NUEVO ENDPOINT: listar visitantes activos
+    @action(detail=False, methods=["get"], url_path="active")
+    def active(self, request):
+        """
+        GET /api/visits/visits/active/
+        Retorna todas las visitas sin checkout (visitantes activos).
+        """
+        qs = self.get_queryset().filter(checkout_at__isnull=True)
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
     # Helper interno: marca checkout, valida idempotencia
     def _perform_checkout(self, visit, request=None):
         if visit.checkout_at:
