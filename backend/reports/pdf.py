@@ -4,12 +4,18 @@ from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from django.utils import timezone
 
 def _fmt_dt(dt):
     if not dt:
         return ""
+    
+   
+    # Convertir el datetime (que está en UTC) a la zona local del servidor (GTM-6)
+    dt_local = timezone.localtime(dt)
     # YYYY-MM-DD HH:MM
-    return dt.strftime("%Y-%m-%d %H:%M")
+    return dt_local.strftime("%Y-%m-%d %H:%M")
+    
 
 def _fmt_ident(citizen):
     return citizen.dpi or citizen.passport or ""
