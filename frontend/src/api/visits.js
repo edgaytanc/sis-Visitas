@@ -3,6 +3,7 @@ import api from './axios'
 const VISITS_PATH = import.meta.env.VITE_VISITS_PATH || '/api/visits/visits/'
 const SEARCH_PATH = import.meta.env.VITE_VISITS_SEARCH_PATH || '/api/visits/search/'
 const PHOTO_UPLOAD_PATH = import.meta.env.VITE_VISITS_PHOTO_UPLOAD_PATH || '/api/visits/photos/upload/'
+const DASHBOARD_STATS_PATH = '/api/visits/visits/stats/'
 
 export async function searchVisitContext({ dpi = '', phone = '', name = '', topic = '', case_code = '' } = {}) {
   const params = {}
@@ -66,5 +67,5 @@ export async function listActiveVisits() {
 // ✅ NUEVA FUNCIÓN: estadísticas del Dashboard
 export async function getDashboardStats() {
   const { data } = await api.get(DASHBOARD_STATS_PATH)
-  return data // { activos, entradas_hoy, salidas_hoy, promedio_min }
+  return data // { activos, entradas_hoy, salidas_hoy }
 }

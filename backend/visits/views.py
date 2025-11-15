@@ -21,6 +21,10 @@ from .pdf import render_badge_pdf
 
 from auditlog.utils import log_action, get_client_ip
 
+from django.utils import timezone
+from datetime import datetime
+from reports.utils import make_datetime_range
+
 from drf_spectacular.utils import (
     extend_schema, extend_schema_view, OpenApiParameter, OpenApiResponse,
     OpenApiTypes
@@ -163,6 +167,36 @@ class VisitViewSet(viewsets.ModelViewSet):
         else:
             response["Content-Disposition"] = f'inline; filename="{filename}"'
         return response
+    
+
+    
+    @action(detail=False, methods=["get"], url_path="stats")
+    def stats(self, request):
+        """
+        GET /api/visits/visits/stats/
+        Retorna estadísticas para el dashboard.
+        """
+        # 1. Visitantes activos (sin checkout)
+        activos = Visit.objects.filter(checkout_at__isnull=True).count()
+        
+        # 2. Usar la utilidad de reportes para el rango de "hoy"
+        tz = timezone.get_current_timezone()
+        # (from_str=None, to_str=None) por defecto usa el día de hoy
+        dt_from, dt_to = make_datetime_range(None, None, tz) 
+
+        # 3. Entradas de hoy (checkin en el rango de hoy)
+        entradas_hoy = Visit.objects.filter(checkin_at__gte=dt_from, checkin_at__lt=dt_to).count()
+        
+        # 4. Salidas de hoy (checkout en el rango de hoy)
+        salidas_hoy = Visit.objects.filter(checkout_at__gte=dt_from, checkout_at__lt=dt_to).count()
+
+        data = {
+            "activos": activos,
+            "entradas_hoy": entradas_hoy,
+            "salidas_hoy": salidas_hoy
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    
     
     
 
