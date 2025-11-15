@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 
 from django.conf import settings
+from django.utils import timezone
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
@@ -73,7 +74,7 @@ def render_badge_pdf(visit) -> bytes:
     badge_code = (visit.badge_code or "SIN-COD").strip()
     full_name  = (citizen.name or "—").strip()
     unit       = (visit.target_unit or "").strip()
-    dt         = visit.checkin_at or datetime.now()
+    dt         = visit.checkin_at or timezone.now()
 
     # ---- Grid general ----
     content_left  = MARGIN + 4*mm
@@ -92,8 +93,8 @@ def render_badge_pdf(visit) -> bytes:
     bounds = qr_code.getBounds()
     w, h = bounds[2] - bounds[0], bounds[3] - bounds[1]
     d = Drawing(qr_size, qr_size, transform=[qr_size / w, 0, 0, qr_size / h, 0, 0])
-    d.add(qr_code)
-    renderPDF.draw(d, c, qr_x + 1*mm, qr_y)    # +1mm para centrar dentro de su caja
+    # d.add(qr_code)
+    # renderPDF.draw(d, c, qr_x + 1*mm, qr_y)    # +1mm para centrar dentro de su caja
 
     # Opcional: marco tenue de la columna QR (útil en pruebas)
     # c.setStrokeColorRGB(0.9,0.9,0.9); c.rect(qr_x, content_bot, qr_box_w, content_top - content_bot, stroke=1, fill=0)
@@ -172,9 +173,14 @@ def render_badge_pdf(visit) -> bytes:
     c.rect(MARGIN, MARGIN, BADGE_WIDTH - 2*MARGIN, footer_h, stroke=0, fill=1)
     c.setFillColor(colors.black)
 
+    # --- 🔽 MODIFICADO ---
+    # Convertimos la fecha UTC (dt_utc) a la zona local (GTM-6)
+    dt_local = timezone.localtime(dt)
+    
     # Entrada (pequeño, a la izquierda)
     c.setFont("Helvetica", 8)
-    c.drawString(MARGIN + 5*mm, MARGIN + footer_h - 4*mm, f"Entrada: {dt.strftime('%Y-%m-%d %H:%M')}")
+    c.drawString(MARGIN + 5*mm, MARGIN + footer_h - 4*mm, f"Entrada: {dt_local.strftime('%Y-%m-%d %H:%M')}")
+    # --- 🔼 FIN MODIFICADO ---
 
     # Código (grande, centrado) — visible para control de salida
     code_text = f"Código visitante: {badge_code}"
