@@ -124,6 +124,54 @@ class UserViewSet(viewsets.ModelViewSet):
         
         # Por defecto (list, retrieve)
         return UserListSerializer
+    
+    # --- TAREA: INICIO (Sobrescritura de 'destroy' para Soft Delete) ---
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        En lugar de borrar (DELETE), desactiva (is_active = False).
+        Esto evita problemas de Foreign Key si el Usuario ya tiene
+        registros asociados (visitas, logs, etc.).
+        """
+        instance = self.get_object()
+
+        # Seguridad: No permitir que un usuario se desactive a sí mismo
+        if instance == request.user:
+            return Response(
+                {"detail": "No puede desactivar su propia cuenta."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Seguridad: No desactivar a otros superusuarios (opcional, pero buena idea)
+        if instance.is_superuser:
+            return Response(
+                {"detail": "No se puede desactivar a un superusuario desde la API."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if not instance.is_active:
+            # Ya está inactivo
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        instance.is_active = False
+        instance.save(update_fields=['is_active'])
+        
+        # Registrar en la bitácora
+        try:
+            log_action(
+                user=request.user,
+                action="user_deactivate", # Acción específica
+                entity="User",
+                entity_id=str(instance.id),
+                payload={"username": instance.username},
+                ip=get_client_ip(request),
+            )
+        except Exception:
+            pass # La auditoría no debe fallar la operación
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    # --- TAREA: FIN (Sobrescritura de 'destroy') ---
 
 
 

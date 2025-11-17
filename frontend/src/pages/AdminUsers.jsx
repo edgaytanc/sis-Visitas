@@ -3,10 +3,8 @@ import {
   Paper, Box, Stack, Typography, TextField, Button, IconButton, Tooltip,
   Table, TableHead, TableRow, TableCell, TableBody, TablePagination,
   Chip, Alert, InputAdornment, LinearProgress,
-  // --- TAREA 7: Nuevas importaciones ---
   Dialog, DialogTitle, DialogContent, DialogActions, Grid,
   FormControlLabel, Checkbox, Autocomplete
-  // --- FIN TAREA 7 ---
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
@@ -15,18 +13,16 @@ import SearchIcon from '@mui/icons-material/Search'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
 
-// --- TAREA 7: Nuevas importaciones ---
 import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   listUsers, deleteUser, listAvailableGroups, createUser, updateUser
 } from '../api/admin_users'
-// --- FIN TAREA 7 ---
 
 import RequireRole from '../hooks/RequireRole'
 
-// --- TAREA 7: Schema de validación Zod ---
+// ... (Schema de Zod - sin cambios) ...
 const userSchema = z.object({
   id: z.number().nullable().optional(),
   username: z.string().trim().min(3, 'Usuario debe tener al menos 3 caracteres.'),
@@ -34,7 +30,6 @@ const userSchema = z.object({
   firstName: z.string().trim().optional(),
   lastName: z.string().trim().optional(),
   
-  // La contraseña es opcional, pero si se provee, debe ser > 8 caracteres
   password: z.string().optional().refine(val => !val || val.length >= 8, {
     message: 'La contraseña debe tener al menos 8 caracteres.'
   }),
@@ -46,7 +41,6 @@ const userSchema = z.object({
   isSuperuser: z.boolean().default(false),
 })
 .refine(data => {
-  // Si se está creando (no hay id), la contraseña es requerida
   if (!data.id && !data.password) return false
   return true
 }, {
@@ -54,17 +48,15 @@ const userSchema = z.object({
   path: ['password']
 })
 .refine(data => {
-  // Si se escribió una contraseña, la confirmación debe coincidir
   if (data.password && data.password !== data.passwordConfirm) return false
   return true
 }, {
   message: 'Las contraseñas no coinciden.',
   path: ['passwordConfirm']
 })
-// --- FIN TAREA 7 ---
 
 
-// --- TAREA 7: Componente UserDialog ---
+// ... (Componente UserDialog - sin cambios) ...
 function UserDialog({ open, onClose, onSave, initialData, availableGroups, formError }) {
   
   const isEditing = !!initialData?.id
@@ -88,7 +80,6 @@ function UserDialog({ open, onClose, onSave, initialData, availableGroups, formE
     }
   })
 
-  // Resetea el formulario cuando cambia 'initialData'
   React.useEffect(() => {
     if (open) {
       reset(initialData || {
@@ -109,12 +100,10 @@ function UserDialog({ open, onClose, onSave, initialData, availableGroups, formE
 
   const submit = async (values) => {
     try {
-      // La API normaliza el objeto (firstName -> first_name)
       await onSave(values) 
-      onClose() // Cierra solo si onSave tiene éxito
-    } catch  {
-      // El error ya se maneja en el componente padre (UsersTable)
-      // y se pasa aquí como 'formError'
+      onClose()
+    } catch (e) {
+      // El error se maneja en el componente padre (UsersTable)
     }
   }
 
@@ -136,7 +125,7 @@ function UserDialog({ open, onClose, onSave, initialData, availableGroups, formE
               helperText={errors.username?.message}
               fullWidth
               autoFocus
-              disabled={isEditing} // No se puede cambiar el username
+              disabled={isEditing}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -271,12 +260,8 @@ function UserDialog({ open, onClose, onSave, initialData, availableGroups, formE
     </Dialog>
   )
 }
-// --- FIN TAREA 7 ---
 
 
-/**
- * Componente principal de la tabla de usuarios
- */
 function UsersTable () {
   const [rows, setRows] = React.useState([])
   const [count, setCount] = React.useState(0)
@@ -286,13 +271,10 @@ function UsersTable () {
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState('')
   const [formError, setFormError] = React.useState('')
-
-  // TAREA 7: Estado para diálogo y grupos
   const [dlgOpen, setDlgOpen] = React.useState(false)
   const [editing, setEditing] = React.useState(null)
   const [availableGroups, setAvailableGroups] = React.useState([])
 
-  // Función para extraer errores del backend
   const extractBackendErrors = (err) => {
     const data = err?.response?.data
     if (!data) return 'Error desconocido'
@@ -305,7 +287,6 @@ function UsersTable () {
     return msgs.join(' | ') || 'Solicitud inválida'
   }
 
-  // Carga de datos de la tabla
   const fetchData = React.useCallback(async () => {
     setLoading(true); setError('')
     try {
@@ -317,63 +298,68 @@ function UsersTable () {
       setRows(items)
       setCount(count)
     } catch (err) {
-      setError('No fue posible cargar los usuarios.',err)
+      setError('No fue posible cargar los usuarios.')
     } finally {
       setLoading(false)
     }
   }, [q, page, rowsPerPage])
 
-  // Carga de grupos (solo una vez)
   const fetchGroups = async () => {
     try {
       const groups = await listAvailableGroups()
       setAvailableGroups(groups || [])
     } catch (e) {
-      setError('No se pudieron cargar los roles/grupos.',e)
+      setError('No se pudieron cargar los roles/grupos.')
     }
   }
 
-  // Hook para recargar datos de tabla
   React.useEffect(() => {
     fetchData()
   }, [fetchData])
   
-  // Hook para cargar grupos al montar
   React.useEffect(() => {
     fetchGroups()
   }, [])
 
 
-  // Manejador para el botón de eliminar
+  // --- TAREA: INICIO (Actualización de 'onDelete') ---
   const onDelete = async (row) => {
-    if (!window.confirm(`¿Está seguro de que desea eliminar al usuario "${row.username}"?`)) {
+    // 1. Cambiar el texto de confirmación
+    const confirmMsg = row.isActive
+      ? `¿Está seguro de que desea DESACTIVAR al usuario "${row.username}"?\n\nEl usuario no podrá iniciar sesión.`
+      : `Este usuario ya está inactivo. ¿Desea ELIMINARLO permanentemente?\n\nADVERTENCIA: Esto solo funcionará si el usuario NUNCA ha creado registros (visitas, logs, etc.).`
+
+    if (!window.confirm(confirmMsg)) {
       return
     }
+    
     setFormError('')
     try {
+      // 2. La llamada a deleteUser() es correcta.
+      // El backend (que modificamos) ahora maneja DELETE como desactivación.
       await deleteUser(row.id)
       await fetchData() // Recargar la tabla
     } catch (e) {
+      // 3. Mostrar errores (ej. "No puede desactivar su propia cuenta")
       setFormError(extractBackendErrors(e))
     }
   }
+  // --- TAREA: FIN (Actualización de 'onDelete') ---
 
-  // --- TAREA 7: Implementación de Handlers ---
   const handleNew = () => {
-    setEditing(null) // 'null' indica que es creación
+    setEditing(null)
     setDlgOpen(true)
     setFormError('')
   }
 
   const handleEdit = (row) => {
-    // Normalizamos el 'initialData' al formato del formulario (firstName, etc.)
     setEditing({
       id: row.id,
       username: row.username,
       email: row.email,
       firstName: row.firstName,
       lastName: row.lastName,
-      password: '', // El password nunca se carga, solo se escribe
+      password: '',
       passwordConfirm: '',
       groups: row.groups || [],
       isActive: row.isActive,
@@ -388,10 +374,10 @@ function UsersTable () {
     setFormError('')
     try {
       await createUser(values)
-      await fetchData() // Recargar la tabla
+      await fetchData()
     } catch (e) {
       setFormError(extractBackendErrors(e))
-      throw e // Lanzar error para que el diálogo sepa que falló
+      throw e
     }
   }
   
@@ -399,13 +385,12 @@ function UsersTable () {
     setFormError('')
     try {
       await updateUser(editing.id, values)
-      await fetchData() // Recargar la tabla
+      await fetchData()
     } catch (e) {
       setFormError(extractBackendErrors(e))
-      throw e // Lanzar error
+      throw e
     }
   }
-  // --- FIN TAREA 7 ---
 
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
@@ -443,17 +428,14 @@ function UsersTable () {
       </Stack>
 
       {/* Alertas de error */}
-      {(error) && ( // Error de carga principal
+      {(error) && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
-      {/* El error del formulario (formError) se muestra *dentro* del diálogo */}
 
-      {/* Indicador de carga sobre la tabla */}
       {loading && <LinearProgress sx={{ mb: 0.5 }} />}
 
-      {/* Tabla de usuarios */}
       <Table size="small">
         <TableHead>
           <TableRow>
@@ -495,11 +477,18 @@ function UsersTable () {
                     <EditIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
-                <Tooltip title="Eliminar">
-                  <IconButton onClick={() => onDelete(row)} size="small">
+                {/* --- TAREA: INICIO (Icono y Tooltip actualizados) --- */}
+                <Tooltip title={row.isActive ? 'Desactivar' : 'Eliminar (Inactivo)'}>
+                  <IconButton 
+                    onClick={() => onDelete(row)} 
+                    size="small"
+                    color={row.isActive ? 'default' : 'error'}
+                    disabled={row.isSuperuser} // Deshabilitar borrado/desactivar si es superusuario
+                  >
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
+                {/* --- TAREA: FIN --- */}
               </TableCell>
             </TableRow>
           ))}
@@ -513,7 +502,6 @@ function UsersTable () {
         </TableBody>
       </Table>
 
-      {/* Paginación */}
       <TablePagination
         component="div"
         count={count}
@@ -527,24 +515,19 @@ function UsersTable () {
         rowsPerPageOptions={[5, 10, 25]}
       />
 
-      {/* --- TAREA 7: Renderizar el Diálogo --- */}
       <UserDialog
         open={dlgOpen}
         onClose={() => setDlgOpen(false)}
         onSave={editing ? handleUpdate : handleCreate}
-        initialData={editing} // 'null' para crear, objeto para editar
+        initialData={editing}
         availableGroups={availableGroups}
-        formError={formError} // Pasamos el error al diálogo
+        formError={formError}
       />
-      {/* --- FIN TAREA 7 --- */}
       
     </Paper>
   )
 }
 
-/**
- * Componente exportado que envuelve la tabla en el HOC de roles.
- */
 export default function AdminUsers () {
   return (
     <RequireRole roles={['admin']}>

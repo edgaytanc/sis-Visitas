@@ -14,9 +14,10 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   listTemas, createTema, updateTema, toggleTema, deleteTema
-} from '../api/temas'
-import RequireRole from '../hooks/RequireRole'
+} from '../api/temas.js' // <-- CORRECCIÓN: Añadido .js
+import RequireRole from '../hooks/RequireRole.jsx' // <-- CORRECCIÓN: Añadido .jsx
 
+// ... (Componente TemaDialog y schema - sin cambios) ...
 const CODE_RE = /^[A-Z0-9\-_.]{3,32}$/
 
 const schema = z.object({
@@ -56,6 +57,7 @@ function TemaDialog({ open, onClose, onSave, initial }) {
   }, [initial, reset])
 
   const submit = async (values) => {
+    // Manejo de errores ahora en el componente principal
     await onSave(values)
     onClose()
   }
@@ -119,6 +121,7 @@ function TemaDialog({ open, onClose, onSave, initial }) {
   )
 }
 
+
 function TemasTable() {
   const [rows, setRows] = React.useState([])
   const [count, setCount] = React.useState(0)
@@ -147,7 +150,6 @@ function TemasTable() {
   React.useEffect(() => { fetchData() }, [fetchData])
 
   const extractBackendErrors = (err) => {
-    // DRF suele devolver { field: ["msg", ...], non_field_errors: [...] }
     const data = err?.response?.data
     if (!data) return 'Error desconocido'
     if (typeof data === 'string') return data
@@ -169,7 +171,7 @@ function TemasTable() {
       await fetchData()
     } catch (e) {
       setFormError(extractBackendErrors(e))
-      throw e // para que el dialog no se cierre si falla
+      throw e 
     }
   }
 
@@ -194,16 +196,31 @@ function TemasTable() {
     }
   }
 
+  // --- LÓGICA CORREGIDA ---
   const onDelete = async (row) => {
-    if (!confirm(`¿Eliminar el tema "${row.nombre}"?`)) return
+    
+    // 1. Si ya está inactivo, no hacer nada y mostrar un error.
+    if (!row.activo) {
+      setFormError("Este tema ya está inactivo.");
+      return;
+    }
+
+    // 2. Mostrar siempre el mensaje de desactivación
+    const confirmMsg = `¿Está seguro de que desea DESACTIVAR el tema "${row.nombre}"?\n\nEsto lo ocultará de nuevos registros.`
+    
+    // Usamos window.confirm en lugar de 'confirm'
+    if (!window.confirm(confirmMsg)) return
+    
     setFormError('')
     try {
+      // 3. La llamada a deleteTema() es correcta (el backend la interpreta como soft-delete)
       await deleteTema(row.id)
       await fetchData()
     } catch (e) {
       setFormError(extractBackendErrors(e))
     }
   }
+  // --- FIN LÓGICA CORREGIDA ---
 
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
@@ -226,7 +243,7 @@ function TemasTable() {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => { setEditing(null); setDlgOpen(true) }}
+            onClick={() => { setEditing(null); setDlgOpen(true); setFormError('') }}
           >
             Nuevo
           </Button>
@@ -264,20 +281,29 @@ function TemasTable() {
               <TableCell align="center">
                 <Stack direction="row" spacing={1} justifyContent="center" alignItems="center">
                   <Chip size="small" label={row.activo ? 'Activo' : 'Inactivo'} color={row.activo ? 'success' : 'default'} />
+                  {/* El switch permite activar/desactivar también */}
                   <Switch checked={row.activo} onChange={() => onToggle(row)} />
                 </Stack>
               </TableCell>
               <TableCell align="right">
                 <Tooltip title="Editar">
-                  <IconButton onClick={() => { setEditing(row); setDlgOpen(true) }}>
+                  <IconButton onClick={() => { setEditing(row); setDlgOpen(true); setFormError('') }}>
                     <EditIcon />
                   </IconButton>
                 </Tooltip>
-                <Tooltip title="Eliminar">
-                  <IconButton onClick={() => onDelete(row)}>
+                
+                {/* --- LÓGICA CORREGIDA --- */}
+                <Tooltip title="Desactivar">
+                  {/* Deshabilitar el botón si row.activo es false */}
+                  <IconButton 
+                    onClick={() => onDelete(row)} 
+                    color="error" 
+                    disabled={!row.activo}
+                  >
                     <DeleteIcon />
                   </IconButton>
                 </Tooltip>
+                {/* --- FIN LÓGICA CORREGIDA --- */}
               </TableCell>
             </TableRow>
           ))}
